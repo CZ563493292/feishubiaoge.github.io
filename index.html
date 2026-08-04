@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>密码验证</title>
+    <style>
+        /* ---------- 全局重置 & 字体 ---------- */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Segoe UI', 'PingFang SC', Roboto, system-ui, sans-serif;
+            background: linear-gradient(145deg, #f5f7fa 0%, #e4e9f2 100%);
+            padding: 20px;
+        }
+
+        /* ---------- 卡片容器 ---------- */
+        .card {
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-radius: 48px;
+            padding: 48px 40px 40px;
+            max-width: 480px;
+            width: 100%;
+            box-shadow:
+                0 30px 60px rgba(0, 0, 0, 0.10),
+                0 10px 30px rgba(0, 0, 0, 0.06),
+                inset 0 1px 0 rgba(255, 255, 255, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            transition: all 0.3s ease;
+        }
+
+        /* ---------- 标题 ---------- */
+        .card-title {
+            font-size: 28px;
+            font-weight: 600;
+            color: #1a1e2b;
+            letter-spacing: -0.3px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 8px;
+        }
+
+        .card-title .lock-icon {
+            font-size: 30px;
+            line-height: 1;
+        }
+
+        .card-sub {
+            font-size: 15px;
+            color: #6b7280;
+            margin-bottom: 32px;
+            border-left: 3px solid #4f8cf7;
+            padding-left: 16px;
+            font-weight: 400;
+            letter-spacing: 0.2px;
+        }
+
+        /* ---------- 输入框组 ---------- */
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 24px;
+        }
+
+        .input-group label {
+            font-size: 14px;
+            font-weight: 500;
+            color: #2d3343;
+            letter-spacing: 0.3px;
+        }
+
+        .input-wrapper {
+            display: flex;
+            align-items: center;
+            background: #ffffffcc;
+            border-radius: 60px;
+            border: 1.5px solid #d0d7e6;
+            transition: border-color 0.25s, box-shadow 0.25s;
+            padding: 0 20px;
+            backdrop-filter: blur(4px);
+        }
+
+        .input-wrapper:focus-within {
+            border-color: #4f8cf7;
+            box-shadow: 0 0 0 4px rgba(79, 140, 247, 0.15);
+        }
+
+        .input-wrapper .input-icon {
+            font-size: 18px;
+            color: #8e95a8;
+            margin-right: 12px;
+            user-select: none;
+        }
+
+        .input-wrapper input {
+            width: 100%;
+            padding: 16px 0;
+            border: none;
+            background: transparent;
+            font-size: 16px;
+            font-weight: 500;
+            color: #1a1e2b;
+            outline: none;
+            letter-spacing: 0.5px;
+        }
+
+        .input-wrapper input::placeholder {
+            color: #b0b8c9;
+            font-weight: 400;
+            letter-spacing: 0px;
+        }
+
+        /* ---------- 按钮 ---------- */
+        .btn-unlock {
+            width: 100%;
+            padding: 16px 0;
+            border: none;
+            border-radius: 60px;
+            background: #1a1e2b;
+            color: #ffffff;
+            font-size: 17px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            transition: background 0.25s, transform 0.15s, box-shadow 0.25s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 4px;
+            box-shadow: 0 8px 20px rgba(26, 30, 43, 0.15);
+        }
+
+        .btn-unlock:hover {
+            background: #2d3343;
+            box-shadow: 0 12px 28px rgba(26, 30, 43, 0.25);
+        }
+
+        .btn-unlock:active {
+            transform: scale(0.97);
+            box-shadow: 0 4px 12px rgba(26, 30, 43, 0.2);
+        }
+
+        .btn-unlock:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* ---------- 错误提示 ---------- */
+        .error-msg {
+            color: #e54c5f;
+            font-size: 14px;
+            font-weight: 500;
+            min-height: 24px;
+            margin-top: 6px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: opacity 0.2s;
+            opacity: 0;
+        }
+
+        .error-msg.show {
+            opacity: 1;
+        }
+
+        .error-msg .err-icon {
+            font-size: 18px;
+        }
+
+        /* ---------- 成功内容 (隐藏) ---------- */
+        .content-hidden {
+            display: none;
+        }
+
+        .content-visible {
+            display: block;
+            animation: fadeSlideUp 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        }
+
+        @keyframes fadeSlideUp {
+            0% {
+                opacity: 0;
+                transform: translateY(18px);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* ---------- 成功状态卡片 ---------- */
+        .success-content {
+            text-align: center;
+            padding: 16px 0 4px;
+        }
+
+        .success-content .greeting {
+            font-size: 56px;
+            font-weight: 700;
+            color: #1a1e2b;
+            letter-spacing: 2px;
+            background: linear-gradient(135deg, #1a1e2b 0%, #4f8cf7 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            line-height: 1.2;
+        }
+
+        .success-content .sub-greeting {
+            font-size: 16px;
+            color: #6b7280;
+            margin-top: 12px;
+            letter-spacing: 0.3px;
+            border-top: 2px dashed #e0e5ef;
+            padding-top: 18px;
+            display: inline-block;
+            padding-left: 24px;
+            padding-right: 24px;
+        }
+
+        .success-content .emoji-big {
+            font-size: 64px;
+            display: block;
+            margin-bottom: 8px;
+            -webkit-text-fill-color: initial;
+        }
+
+        /* ---------- 重置按钮 (小) ---------- */
+        .reset-link {
+            display: inline-block;
+            margin-top: 24px;
+            font-size: 14px;
+            color: #8e95a8;
+            cursor: pointer;
+            text-decoration: underline;
+            text-underline-offset: 4px;
+            transition: color 0.2s;
+            border: none;
+            background: none;
+            font-weight: 500;
+        }
+
+        .reset-link:hover {
+            color: #4f8cf7;
+        }
+
+        /* ---------- 响应式 ---------- */
+        @media (max-width: 500px) {
+            .card {
+                padding: 32px 24px 28px;
+                border-radius: 32px;
+            }
+
+            .card-title {
+                font-size: 24px;
+            }
+
+            .success-content .greeting {
+                font-size: 44px;
+            }
+
+            .success-content .emoji-big {
+                font-size: 48px;
+            }
+
+            .input-wrapper input {
+                font-size: 15px;
+                padding: 14px 0;
+            }
+
+            .btn-unlock {
+                font-size: 16px;
+                padding: 14px 0;
+            }
+        }
+
+        @media (max-width: 380px) {
+            .card {
+                padding: 24px 16px 20px;
+                border-radius: 24px;
+            }
+
+            .card-title {
+                font-size: 20px;
+                flex-wrap: wrap;
+            }
+
+            .success-content .greeting {
+                font-size: 36px;
+            }
+        }
+
+        /* ---------- 辅助 ---------- */
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            border: 0;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="card" role="main" aria-labelledby="card-heading">
+
+        <!-- ====== 锁屏状态 ====== -->
+        <div id="lockScreen">
+            <h1 id="card-heading" class="card-title">
+                <span class="lock-icon" aria-hidden="true">🔒</span>
+                请输入密码
+            </h1>
+            <p class="card-sub">输入正确的密码才能查看内容</p>
+
+            <div class="input-group">
+                <label for="passwordInput">密码</label>
+                <div class="input-wrapper">
+                    <span class="input-icon" aria-hidden="true">⌨️</span>
+                    <input
+                    type="password"
+                    id="passwordInput"
+                    placeholder="输入密码…"
+                    autocomplete="current-password"
+                    aria-describedby="errorMsg"
+                    />
+                </div>
+                <div id="errorMsg" class="error-msg" role="alert">
+                    <span class="err-icon" aria-hidden="true">✕</span>
+                    <span id="errorText">密码错误，请重试</span>
+                </div>
+            </div>
+
+            <button id="unlockBtn" class="btn-unlock" type="button">
+                <span aria-hidden="true">🔓</span> 解锁
+            </button>
+            <p style="margin-top: 18px; font-size: 13px; color: #b0b8c9; text-align: center; letter-spacing: 0.3px;">
+                提示：密码是 <strong style="color:#4f8cf7; font-weight:600;">321</strong>
+            </p>
+        </div>
+
+        <!-- ====== 解锁后内容 ====== -->
+        <div id="contentArea" class="content-hidden">
+            <div class="success-content">
+                <span class="emoji-big" aria-hidden="true">👋</span>
+                <div class="greeting">你好</div>
+                <div class="sub-greeting">✨ 欢迎访问</div>
+                <button id="resetBtn" class="reset-link" type="button">🔙 重新锁定</button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        (function() {
+            'use strict';
+
+            // DOM 引用
+            const lockScreen = document.getElementById('lockScreen');
+            const contentArea = document.getElementById('contentArea');
+            const passwordInput = document.getElementById('passwordInput');
+            const unlockBtn = document.getElementById('unlockBtn');
+            const resetBtn = document.getElementById('resetBtn');
+            const errorMsg = document.getElementById('errorMsg');
+            const errorText = document.getElementById('errorText');
+
+            const CORRECT_PASSWORD = '321';
+
+            // ---------- 工具函数 ----------
+            function showError(message) {
+                errorText.textContent = message || '密码错误，请重试';
+                errorMsg.classList.add('show');
+            }
+
+            function hideError() {
+                errorMsg.classList.remove('show');
+            }
+
+            // 清空输入并聚焦
+            function resetInput() {
+                passwordInput.value = '';
+                hideError();
+                passwordInput.focus();
+            }
+
+            // ---------- 解锁 ----------
+            function unlock() {
+                const entered = passwordInput.value.trim();
+
+                if (entered === '') {
+                    showError('请输入密码');
+                    return;
+                }
+
+                if (entered === CORRECT_PASSWORD) {
+                    // 正确
+                    hideError();
+                    lockScreen.style.display = 'none';
+                    contentArea.className = 'content-visible';
+                    // 让重置按钮获得焦点 (辅助)
+                    setTimeout(() => resetBtn.focus(), 100);
+                } else {
+                    // 错误
+                    showError('密码错误，请重试');
+                    passwordInput.value = '';
+                    passwordInput.focus();
+                    // 轻微抖动 (可选)
+                    passwordInput.style.animation = 'none';
+                    requestAnimationFrame(() => {
+                        passwordInput.style.animation = 'shake 0.35s ease';
+                    });
+                }
+            }
+
+            // ---------- 重置 (锁定) ----------
+            function lock() {
+                contentArea.className = 'content-hidden';
+                lockScreen.style.display = 'block';
+                resetInput();
+                // 让密码框获得焦点
+                setTimeout(() => passwordInput.focus(), 150);
+            }
+
+            // ---------- 键盘事件 ----------
+            function handleKeydown(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    unlock();
+                }
+            }
+
+            // ---------- 注入 shake 动画 (仅当需要) ----------
+            function injectShakeAnimation() {
+                if (document.getElementById('shakeStyle')) return;
+                const style = document.createElement('style');
+                style.id = 'shakeStyle';
+                style.textContent = `
+                    @keyframes shake {
+                        0%, 100% { transform: translateX(0); }
+                        20% { transform: translateX(-8px); }
+                        40% { transform: translateX(8px); }
+                        60% { transform: translateX(-5px); }
+                        80% { transform: translateX(5px); }
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+            injectShakeAnimation();
+
+            // ---------- 事件绑定 ----------
+            unlockBtn.addEventListener('click', unlock);
+            passwordInput.addEventListener('keydown', handleKeydown);
+            resetBtn.addEventListener('click', lock);
+
+            // 输入时清除错误状态
+            passwordInput.addEventListener('input', function() {
+                if (errorMsg.classList.contains('show')) {
+                    hideError();
+                }
+                // 移除抖动
+                this.style.animation = '';
+            });
+
+            // 点击卡片空白区域聚焦输入框 (提升体验)
+            document.querySelector('.card').addEventListener('click', function(e) {
+                // 如果点击的是卡片本身或背景，且锁屏可见
+                if (e.target.closest('.card') && lockScreen.style.display !== 'none') {
+                    passwordInput.focus();
+                }
+            });
+
+            // ---------- 初始状态 ----------
+            lockScreen.style.display = 'block';
+            contentArea.className = 'content-hidden';
+            resetInput();
+
+            // 页面加载完成后聚焦
+            window.addEventListener('load', function() {
+                passwordInput.focus();
+            });
+
+            // ---------- 防暴力破解 (简单保护) ----------
+            let attemptCount = 0;
+            const originalUnlock = unlock;
+            unlock = function() {
+                const entered = passwordInput.value.trim();
+                if (entered === CORRECT_PASSWORD) {
+                    attemptCount = 0; // 重置计数
+                    originalUnlock.call(this);
+                    return;
+                }
+
+                attemptCount++;
+                if (attemptCount >= 5) {
+                    showError('尝试次数过多，请稍后再试');
+                    unlockBtn.disabled = true;
+                    passwordInput.disabled = true;
+                    setTimeout(() => {
+                        unlockBtn.disabled = false;
+                        passwordInput.disabled = false;
+                        attemptCount = 0;
+                        hideError();
+                        resetInput();
+                    }, 3000);
+                    return;
+                }
+                originalUnlock.call(this);
+            };
+
+            // 重写解锁按钮事件 (保留之前的绑定)
+            // 移除旧监听，重新绑定
+            const newUnlockBtn = unlockBtn.cloneNode(true);
+            unlockBtn.parentNode.replaceChild(newUnlockBtn, unlockBtn);
+            // 更新引用
+            const newUnlockBtnRef = document.getElementById('unlockBtn');
+            newUnlockBtnRef.addEventListener('click', unlock);
+
+            // 修复键盘事件中的 unlock 引用
+            passwordInput.removeEventListener('keydown', handleKeydown);
+            passwordInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    unlock();
+                }
+            });
+
+            // 暴露 reset 给全局 (无实际需要)
+            console.log('🔐 页面已加载 — 密码: 321');
+        })();
+    </script>
+
+</body>
+</html>
