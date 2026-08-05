@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>飞书多维表格 - 课程视频</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            color: #fff;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+
+        /* 密码锁界面 */
+        #pwdOverlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 999999;
+        }
+
+        #pwdBox {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 16px;
+            padding: 40px;
+            width: 90%;
+            max-width: 360px;
+            text-align: center;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        }
+
+        #pwdTitle {
+            color: #fff;
+            font-size: 22px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        #pwdSub {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 13px;
+            margin-bottom: 24px;
+        }
+
+        #pwdInput {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            font-size: 16px;
+            outline: none;
+            transition: all 0.3s;
+            box-sizing: border-box;
+        }
+
+        #pwdInput:focus {
+            border-color: rgba(100, 200, 255, 0.5);
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        #pwdInput::placeholder {
+            color: rgba(255, 255, 255, 0.3);
+        }
+
+        #pwdSubmit {
+            width: 100%;
+            margin-top: 20px;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        #pwdSubmit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        #pwdError {
+            margin-top: 16px;
+            color: #ff6b6b;
+            font-size: 13px;
+            min-height: 16px;
+        }
+
+        /* 主内容区 */
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 40px 20px 80px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 36px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 16px;
+        }
+
+        /* 下拉菜单 */
+        .course-select-wrapper {
+            margin-bottom: 30px;
+        }
+
+        .course-select-label {
+            font-size: 16px;
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 12px;
+            display: block;
+        }
+
+        .course-select {
+            width: 100%;
+            padding: 16px 20px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            color: #fff;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            outline: none;
+            transition: all 0.3s ease;
+            appearance: none;
+            -webkit-appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 20px center;
+            background-size: 20px;
+        }
+
+        .course-select:hover {
+            border-color: rgba(102, 126, 234, 0.5);
+            background-color: rgba(255, 255, 255, 0.08);
+        }
+
+        .course-select option {
+            background: #16213e;
+            color: #fff;
+            padding: 12px;
+        }
+
+        /* 集数列表 */
+        .episode-section {
+            display: none;
+        }
+
+        .episode-section.active {
+            display: block;
+        }
+
+        .episode-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .episode-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 18px 24px;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .episode-item:hover {
+            border-color: rgba(102, 126, 234, 0.5);
+            background: rgba(102, 126, 234, 0.15);
+            transform: translateX(4px);
+        }
+
+        .episode-info {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .episode-num {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            flex-shrink: 0;
+        }
+
+        .episode-title {
+            font-size: 16px;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .play-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 14px;
+        }
+
+        /* 播放页面 */
+        .player-view {
+            display: none;
+            width: 100%;
+            height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
+            background: #000;
+            z-index: 1000;
+            flex-direction: column;
+        }
+
+        .player-view.active {
+            display: flex;
+        }
+
+        .player-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 30px;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+        }
+
+        .back-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #fff;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            padding: 10px 20px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .back-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .current-video-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #fff;
+            text-align: right;
+            flex: 1;
+            margin-left: 20px;
+        }
+
+        .player-container {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            position: relative;
+        }
+
+        .video-wrapper {
+            position: relative;
+            width: 100%;
+            max-width: 1400px;
+            aspect-ratio: 16/9;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            background: #000;
+        }
+
+        video {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .watermark {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            z-index: 20;
+            padding: 6px 14px;
+            background: rgba(0, 0, 0, 0.5);
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 12px;
+            border-radius: 4px;
+            pointer-events: none;
+        }
+
+        /* 作者信息 */
+        .author-footer {
+            text-align: center;
+            padding: 30px 20px;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 15px;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            margin-top: 40px;
+        }
+
+        .author-footer span {
+            color: rgba(255, 255, 255, 0.7);
+            font-weight: 500;
+        }
+
+        /* 响应式 */
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 26px;
+            }
+
+            .episode-item {
+                padding: 14px 16px;
+            }
+
+            .episode-title {
+                font-size: 14px;
+            }
+
+            .player-header {
+                padding: 12px 16px;
+            }
+
+            .current-video-title {
+                font-size: 13px;
+            }
+
+            .video-wrapper {
+                border-radius: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 密码锁界面 -->
+    <div id="pwdOverlay">
+        <div id="pwdBox">
+            <div id="pwdTitle">访问验证</div>
+            <div id="pwdSub">请输入访问密码以继续</div>
+            <input type="password" id="pwdInput" placeholder="请输入密码" autocomplete="off">
+            <button id="pwdSubmit">确 定</button>
+            <div id="pwdError"></div>
+        </div>
+    </div>
+
+    <!-- 主内容 -->
+    <div class="container" id="mainContent" style="display:none;">
+        <div class="header">
+            <h1>飞书多维表格</h1>
+            <p>选择课程后点击视频即可播放</p>
+        </div>
+
+        <div class="course-select-wrapper">
+            <label class="course-select-label">请选择课程：</label>
+            <select class="course-select" id="courseSelect">
+                <option value="">— 请选择课程 —</option>
+                <option value="course1">第一次课</option>
+            </select>
+        </div>
+
+        <!-- 第一次课 -->
+        <div class="episode-section" id="course1">
+            <div class="episode-list" id="episodeList">
+                <!-- 集数列表由 JS 动态生成 -->
+            </div>
+        </div>
+
+        <!-- 作者信息 -->
+        <div class="author-footer">
+            作者：<span>橙子教育</span> Q：<span>563493292</span>
+        </div>
+    </div>
+
+    <!-- 播放页面 -->
+    <div class="player-view" id="playerView">
+        <div class="player-header">
+            <div class="back-btn" id="backBtn">
+                <span>←</span>
+                <span>返回课程列表</span>
+            </div>
+            <div class="current-video-title" id="currentVideoTitle">视频播放</div>
+        </div>
+        <div class="player-container">
+            <div class="video-wrapper">
+                <video
+                    id="videoPlayer"
+                    controls
+                    controlslist="nodownload noremoteplayback"
+                    disablePictureInPicture
+                    playsinline
+                >
+                    您的浏览器不支持视频播放。
+                </video>
+                <div class="watermark">© 橙子教育 禁止下载</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /**
+         * 课程数据 - 第一次课
+         * 包含所有集数的标题和视频链接
+         */
+        const course1Episodes = [
+            { title: '飞书教师提效场景大全', url: 'https://1500019226.vod2.myqcloud.com/6cae817cvodcq1500019226/bbb75cd15001834814685797880/5sbZS7zB8gsA.mp4' },
+            { title: '为什么要开这个课', url: 'https://1500019226.vod2.myqcloud.com/6cae817cvodcq1500019226/eaf67e385001834814689598587/1tF5wVHpVIsA.mp4' },
+            { title: '多维表格和Excel的区别', url: 'https://1500019226.vod2.myqcloud.com/6cae817cvodcq1500019226/9b6ceb635001834814688461245/BI73QprzsqwA.mp4' },
+            { title: '新建第一个多维表格案例（上）', url: 'https://1500019226.vod2.myqcloud.com/6cae817cvodcq1500019226/9b0323855001834814688406581/q4te8rGts3cA.mp4' },
+            { title: '新建第一个多维表格案例(下)', url: 'https://1500019226.vod2.myqcloud.com/6cae817cvodcq1500019226/e362f1e15001834814689212491/Jayceog0C5UA.mp4' },
+            { title: '人事考勤案例', url: 'https://1500019226.vod2.myqcloud.com/6cae817cvodcq1500019226/e354a65f5001834814689209204/YJTYiZ3rqIAA.mp4' },
+            { title: '学生活动记录并分享的案例', url: 'https://1500019226.vod2.myqcloud.com/6cae817cvodcq1500019226/e36260995001834814689211340/MfsRncElSbYA.mp4' },
+            { title: '安排表表格案例', url: 'https://1500019226.vod2.myqcloud.com/6cae817cvodcq1500019226/e59f29855001834814767245357/LMP6BqAVNO0A.mp4' },
+            { title: '迪士尼乐园游玩项目表', url: 'https://1500019226.vod2.myqcloud.com/6cae817cvodcq1500019226/28fccf7e5001834814690834018/AkDjFQEoFf8A.mp4' },
+            { title: '提交图片附件按照索引列命名', url: 'https://1500019226.vod2.myqcloud.com/6cae817cvodcq1500019226/be5ad7a45001834814692647830/wLOQFKaCIokA.mp4' },
+            { title: 'AI写评语案例', url: 'https://1500019226.vod2.myqcloud.com/6cae817cvodcq1500019226/c29114865001834814770729096/8WCb9uZfkkAA.mp4' },
+            { title: '课程总结+作业布置', url: 'https://1500019226.vod2.myqcloud.com/6cae817cvodcq1500019226/6f4fdc1f5001834814691580074/l7BQ3mSyhJsA.mp4' }
+        ];
+
+        /**
+         * DOM 元素引用
+         */
+        const pwdOverlay = document.getElementById('pwdOverlay');
+        const pwdInput = document.getElementById('pwdInput');
+        const pwdSubmit = document.getElementById('pwdSubmit');
+        const pwdError = document.getElementById('pwdError');
+        const mainContent = document.getElementById('mainContent');
+        const courseSelect = document.getElementById('courseSelect');
+        const episodeList = document.getElementById('episodeList');
+        const playerView = document.getElementById('playerView');
+        const backBtn = document.getElementById('backBtn');
+        const currentVideoTitle = document.getElementById('currentVideoTitle');
+        const videoPlayer = document.getElementById('videoPlayer');
+
+        /**
+         * 密码验证功能
+         * 密码：QQ563493292
+         */
+        const correctPwd = 'QQ563493292';
+
+        /**
+         * 检查密码是否正确
+         */
+        function checkPassword() {
+            const val = pwdInput.value;
+            if (val === correctPwd) {
+                pwdOverlay.style.display = 'none';
+                mainContent.style.display = 'block';
+                try { sessionStorage.setItem('_pwd_ok', '1'); } catch(e) {}
+            } else {
+                pwdError.textContent = '密码错误，请重试';
+                pwdInput.value = '';
+                pwdInput.focus();
+                setTimeout(function() { pwdError.textContent = ''; }, 2000);
+            }
+        }
+
+        pwdSubmit.addEventListener('click', checkPassword);
+        pwdInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') checkPassword();
+        });
+
+        try {
+            if (sessionStorage.getItem('_pwd_ok') === '1') {
+                pwdOverlay.style.display = 'none';
+                mainContent.style.display = 'block';
+            } else {
+                setTimeout(function() { pwdInput.focus(); }, 100);
+            }
+        } catch(e) {
+            setTimeout(function() { pwdInput.focus(); }, 100);
+        }
+
+        /**
+         * 渲染第一次课的集数列表
+         */
+        function renderEpisodes() {
+            episodeList.innerHTML = course1Episodes.map(function(ep, i) {
+                return '<div class="episode-item" onclick="playVideo(\'' + (i + 1) + '. ' + ep.title + '\', \'' + ep.url + '\')">' +
+                    '<div class="episode-info">' +
+                        '<div class="episode-num">' + (i + 1) + '</div>' +
+                        '<span class="episode-title">' + ep.title + '</span>' +
+                    '</div>' +
+                    '<div class="play-btn">▶ 点击播放</div>' +
+                '</div>';
+            }).join('');
+        }
+
+        /**
+         * 下拉菜单切换
+         */
+        courseSelect.addEventListener('change', function() {
+            const sections = document.querySelectorAll('.episode-section');
+            sections.forEach(function(s) { s.classList.remove('active'); });
+            if (this.value) {
+                document.getElementById(this.value).classList.add('active');
+            }
+        });
+
+        /**
+         * 播放视频
+         * @param {string} title - 视频标题
+         * @param {string} url - 视频链接
+         */
+        window.playVideo = function(title, url) {
+            currentVideoTitle.textContent = title;
+            videoPlayer.src = url;
+            playerView.classList.add('active');
+            videoPlayer.load();
+            videoPlayer.play().catch(function() {});
+        };
+
+        /**
+         * 返回课程列表
+         */
+        backBtn.addEventListener('click', function() {
+            videoPlayer.pause();
+            videoPlayer.src = '';
+            playerView.classList.remove('active');
+        });
+
+        /**
+         * 下载保护措施
+         * 禁止下载但允许全屏播放
+         */
+        /**
+         * 禁用右键菜单
+         * @param {Event} e - 鼠标事件对象
+         */
+        document.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+        });
+
+        /**
+         * 阻止保存类快捷键（不阻止F11全屏）
+         * @param {KeyboardEvent} e - 键盘事件对象
+         */
+        document.addEventListener('keydown', function(e) {
+            const prohibitedKeys = [
+                'Ctrl+S', 'Ctrl+P', 'Ctrl+U',
+                'Ctrl+Shift+I', 'Ctrl+Shift+J', 'Ctrl+Shift+C',
+                'Meta+S', 'Meta+P', 'Meta+U',
+                'Meta+Shift+I', 'Meta+Shift+J', 'Meta+Shift+C'
+            ];
+
+            let keyCombo = '';
+            if (e.ctrlKey || e.metaKey) {
+                keyCombo += e.metaKey ? 'Meta+' : 'Ctrl+';
+            }
+            if (e.shiftKey) {
+                keyCombo += 'Shift+';
+            }
+            keyCombo += e.key;
+
+            if (prohibitedKeys.indexOf(keyCombo) !== -1 || e.key === 'F12') {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+        });
+
+        /**
+         * 禁止拖拽和选择
+         * @param {Event} e - 事件对象
+         */
+        document.addEventListener('dragstart', function(e) {
+            e.preventDefault();
+        });
+
+        document.addEventListener('selectstart', function(e) {
+            e.preventDefault();
+        });
+
+        /**
+         * 视频播放器右键菜单禁用
+         */
+        videoPlayer.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+        });
+
+        /**
+         * 页面加载完成后渲染集数列表
+         */
+        renderEpisodes();
+    </script>
+</body>
+</html>
