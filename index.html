@@ -1,0 +1,1109 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>飞书多维表格 - 课程视频</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            color: #fff;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+
+        /* 密码锁界面 */
+        #pwdOverlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 999999;
+        }
+
+        #pwdBox {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 16px;
+            padding: 40px;
+            width: 90%;
+            max-width: 360px;
+            text-align: center;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        }
+
+        #pwdTitle {
+            color: #fff;
+            font-size: 22px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        #pwdSub {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 13px;
+            margin-bottom: 24px;
+        }
+
+        #pwdInput {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            font-size: 16px;
+            outline: none;
+            transition: all 0.3s;
+            box-sizing: border-box;
+        }
+
+        #pwdInput:focus {
+            border-color: rgba(100, 200, 255, 0.5);
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        #pwdInput::placeholder {
+            color: rgba(255, 255, 255, 0.3);
+        }
+
+        #pwdSubmit {
+            width: 100%;
+            margin-top: 20px;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        #pwdSubmit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        #pwdError {
+            margin-top: 16px;
+            color: #ff6b6b;
+            font-size: 13px;
+            min-height: 16px;
+        }
+
+        /* 主内容区 */
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 40px 20px 80px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 36px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 16px;
+        }
+
+        /* 固定课程标题卡片（可点击展开） */
+        .course-fixed-card {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.2) 100%);
+            border: 1px solid rgba(102, 126, 234, 0.4);
+            border-radius: 16px;
+            padding: 24px 30px;
+            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            backdrop-filter: blur(10px);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .course-fixed-card:hover {
+            border-color: rgba(102, 126, 234, 0.8);
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.3) 0%, rgba(118, 75, 162, 0.3) 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(102, 126, 234, 0.2);
+        }
+
+        .course-fixed-card:active {
+            transform: translateY(0);
+        }
+
+        .course-icon {
+            width: 52px;
+            height: 52px;
+            border-radius: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            flex-shrink: 0;
+        }
+
+        .course-fixed-info {
+            flex: 1;
+        }
+
+        .course-fixed-title {
+            font-size: 22px;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 4px;
+        }
+
+        .course-fixed-desc {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        /* 展开指示箭头 */
+        .course-arrow {
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 22px;
+            transition: transform 0.3s ease;
+            flex-shrink: 0;
+        }
+
+        .course-fixed-card.expanded .course-arrow {
+            transform: rotate(90deg);
+        }
+
+        /* 集数卡片列表容器 */
+        .episode-list-wrapper {
+            margin-bottom: 30px;
+            overflow: hidden;
+        }
+
+        /* 集数列表 */
+        .episode-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        /* 集数条目 */
+        .episode-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 14px 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.25s ease;
+        }
+
+        .episode-item:hover {
+            border-color: rgba(102, 126, 234, 0.6);
+            background: rgba(102, 126, 234, 0.12);
+            transform: translateX(4px);
+        }
+
+        .episode-item:active {
+            transform: translateX(2px);
+        }
+
+        .episode-num {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            flex-shrink: 0;
+        }
+
+        .episode-title {
+            flex: 1;
+            font-size: 15px;
+            color: rgba(255, 255, 255, 0.88);
+        }
+
+        .episode-play-icon {
+            color: rgba(255, 255, 255, 0.35);
+            font-size: 18px;
+            transition: color 0.2s ease;
+        }
+
+        .episode-item:hover .episode-play-icon {
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        /* 播放页面 */
+        .player-view {
+            display: none;
+            width: 100%;
+            height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
+            background: #000;
+            z-index: 1000;
+            flex-direction: column;
+        }
+
+        .player-view.active {
+            display: flex;
+        }
+
+        .player-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 30px;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+        }
+
+        .back-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #fff;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            padding: 10px 20px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .back-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .current-video-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #fff;
+            text-align: right;
+            flex: 1;
+            margin-left: 20px;
+        }
+
+        .player-container {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            position: relative;
+        }
+
+        .video-wrapper {
+            position: relative;
+            width: 100%;
+            max-width: 1400px;
+            aspect-ratio: 16/9;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            background: #000;
+        }
+
+        video {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .watermark {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            z-index: 20;
+            padding: 6px 14px;
+            background: rgba(0, 0, 0, 0.5);
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 12px;
+            border-radius: 4px;
+            pointer-events: none;
+        }
+
+        /* 作者信息 */
+        .author-footer {
+            text-align: center;
+            padding: 30px 20px;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 15px;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            margin-top: 40px;
+        }
+
+        .author-footer span {
+            color: rgba(255, 255, 255, 0.7);
+            font-weight: 500;
+        }
+
+        /* 响应式 */
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 26px;
+            }
+
+            .course-fixed-card {
+                padding: 18px 20px;
+            }
+
+            .course-fixed-title {
+                font-size: 18px;
+            }
+
+            .player-header {
+                padding: 12px 16px;
+            }
+
+            .current-video-title {
+                font-size: 13px;
+            }
+
+            .video-wrapper {
+                border-radius: 0;
+            }
+        }
+
+        /* ========== 视频下载防护 CSS ========== */
+
+        /* 隐藏 Chrome/Edge 视频下载按钮 */
+        video::-webkit-media-controls-download-button {
+            display: none !important;
+        }
+
+        /* 隐藏视频播放列表/下载相关控件 */
+        video::-webkit-media-controls-enclosure {
+            overflow: hidden;
+        }
+
+        /* 禁用右键菜单视频控件菜单 */
+        video::-webkit-media-controls-panel {
+            width: calc(100% - 30px);
+        }
+
+        /* 视频水印 */
+        .watermark {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            z-index: 20;
+            padding: 6px 14px;
+            background: rgba(0, 0, 0, 0.5);
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 12px;
+            border-radius: 4px;
+            pointer-events: none;
+            user-select: none;
+        }
+
+        /* ========== 各类下载插件注入元素隐藏 ========== */
+        /* IDM (Internet Download Manager) */
+        [class*="IDM"], [class*="idm"], [id*="IDM"], [id*="idm"],
+        [class*="IDM_"], [class*="idm_"], [id*="IDM_"], [id*="idm_"],
+        [class*="IDMDownload"], [id*="IDMDownload"],
+        [class*="idm_download"], [id*="idm_download"],
+        [class*="idm-button"], [id*="idm-button"],
+        [class*="IDMDownloadButton"], [id*="IDMDownloadButton"],
+        [class*="IDMDialog"], [id*="IDMDialog"],
+        [class*="IDMDownLink"], [id*="IDMDownLink"],
+        [class*="IDMVideoDownload"], [id*="IDMVideoDownload"],
+        /* Video DownloadHelper */
+        [class*="vdh"], [class*="VDH"], [id*="vdh"], [id*="VDH"],
+        [class*="video-downloadhelper"], [id*="video-downloadhelper"],
+        [class*="downloadhelper"], [id*="downloadhelper"],
+        [class*="vdh-button"], [id*="vdh-button"],
+        /* Flash Video Downloader */
+        [class*="flash-video"], [id*="flash-video"],
+        [class*="fvdownloader"], [id*="fvdownloader"],
+        [class*="flashdownloader"], [id*="flashdownloader"],
+        /* EagleGet */
+        [class*="eagleget"], [class*="EagleGet"], [id*="eagleget"], [id*="EagleGet"],
+        [class*="eg-download"], [id*="eg-download"],
+        [class*="eagleget-button"], [id*="eagleget-button"],
+        /* Free Download Manager (FDM) */
+        [class*="fdm-"], [class*="FDM"], [id*="fdm-"], [id*="FDM"],
+        [class*="free-download-manager"], [id*="free-download-manager"],
+        [class*="fdm-button"], [id*="fdm-button"],
+        /* XDM (Xtreme Download Manager) */
+        [class*="xdm-"], [class*="XDM"], [id*="xdm-"], [id*="XDM"],
+        [class*="xtreme-download"], [id*="xtreme-download"],
+        /* Neat Download Manager (NDM) */
+        [class*="ndm-"], [class*="NDM"], [id*="ndm-"], [id*="NDM"],
+        [class*="neat-download"], [id*="neat-download"],
+        /* Ant Video Downloader */
+        [class*="antvideo"], [class*="AntVideo"], [id*="antvideo"], [id*="AntVideo"],
+        [class*="ant-downloader"], [id*="ant-downloader"],
+        /* Video Downloader professional */
+        [class*="video-downloader-pro"], [id*="video-downloader-pro"],
+        [class*="vdownloader"], [id*="vdownloader"],
+        /* 迅雷 (Thunder / Xunlei) */
+        [class*="thunder"], [class*="Thunder"], [id*="thunder"], [id*="Thunder"],
+        [class*="xunlei"], [class*="Xunlei"], [id*="xunlei"], [id*="Xunlei"],
+        [class*="xl_download"], [id*="xl_download"],
+        [class*="thunder-button"], [id*="thunder-button"],
+        [class*="XLDown"], [id*="XLDown"],
+        /* 115 下载 */
+        [class*="115-download"], [id*="115-download"],
+        [class*="115downloader"], [id*="115downloader"],
+        /* QQ 浏览器下载 */
+        [class*="qq-download"], [id*="qq-download"],
+        [class*="qqbrowser-download"], [id*="qqbrowser-download"],
+        /* UC 浏览器下载 */
+        [class*="uc-download"], [id*="uc-download"],
+        [class*="ucdownloader"], [id*="ucdownloader"],
+        /* 搜狗下载 */
+        [class*="sogou-download"], [id*="sogou-download"],
+        /* 通用下载浮层 */
+        [class*="download-video"], [id*="download-video"],
+        [class*="video-download"], [id*="video-download"],
+        [class*="videoDownloader"], [id*="videoDownloader"],
+        [class*="video-download-helper"], [id*="video-download-helper"],
+        [class*="download-button-floating"], [id*="download-button-floating"],
+        [class*="floating-download"], [id*="floating-download"],
+        [class*="video-save"], [id*="video-save"],
+        [class*="save-video"], [id*="save-video"],
+        [data-action="download"] {
+            display: none !important;
+            visibility: hidden !important;
+            opacity: 0 !important;
+            width: 0 !important;
+            height: 0 !important;
+            pointer-events: none !important;
+            z-index: -9999 !important;
+        }
+
+        /* 防止任意 fixed 定位的高 z-index 浮层覆盖在视频上 */
+        body > div[style*="position: fixed"][style*="z-index"]:not(.watermark):not(.player-view):not(.loader):not(#pwdOverlay) {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+    <!-- 密码锁界面 -->
+    <div id="pwdOverlay">
+        <div id="pwdBox">
+            <div id="pwdTitle">访问验证</div>
+            <div id="pwdSub">请输入访问密码以继续</div>
+            <input type="password" id="pwdInput" placeholder="请输入密码" autocomplete="off">
+            <button id="pwdSubmit">确 定</button>
+            <div id="pwdError"></div>
+        </div>
+    </div>
+
+    <!-- 主内容 -->
+    <div class="container" id="mainContent" style="display:none;">
+        <div class="header">
+            <h1>飞书多维表格</h1>
+            <p>选择集数后点击播放按钮观看视频</p>
+        </div>
+
+        <!-- 固定的第一次课标题（点击展开集数下拉菜单） -->
+        <div class="course-fixed-card" id="courseCard">
+            <div class="course-icon">📚</div>
+            <div class="course-fixed-info">
+                <div class="course-fixed-title">第一次课</div>
+                <div class="course-fixed-desc">点击展开集数列表 · 共12集</div>
+            </div>
+            <div class="course-arrow">›</div>
+        </div>
+
+        <!-- 集数列表（点击第一次课后展开显示） -->
+        <div class="episode-list-wrapper" id="episodeWrapper" style="display:none;">
+            <div class="episode-list" id="episodeList">
+                <!-- 集数条目由 JS 动态生成 -->
+            </div>
+        </div>
+
+        <!-- 作者信息 -->
+        <div class="author-footer">
+            作者：<span>橙子教育</span> Q：<span>563493292</span>
+        </div>
+    </div>
+
+    <!-- 播放页面 -->
+    <div class="player-view" id="playerView">
+        <div class="player-header">
+            <div class="back-btn" id="backBtn">
+                <span>←</span>
+                <span>返回课程列表</span>
+            </div>
+            <div class="current-video-title" id="currentVideoTitle">视频播放</div>
+        </div>
+        <div class="player-container">
+            <div class="video-wrapper">
+                <video
+                    id="videoPlayer"
+                    controls
+                    controlslist="nodownload noremoteplayback noplaybackrate"
+                    disablePictureInPicture
+                    playsinline
+                    preload="metadata"
+                    oncontextmenu="return false;"
+                    onmousedown="if(event.button===2)return false;"
+                >
+                    您的浏览器不支持视频播放。
+                </video>
+                <div class="watermark">© 橙子教育 禁止下载</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /**
+         * 课程数据 - 第一次课
+         * 包含所有集数的标题和视频链接
+         */
+        const course1Episodes = [
+            { title: '飞书教师提效场景大全', url: 'https://1500019226.vod2.myqcloud.com/6cae817cvodcq1500019226/bbb75cd15001834814685797880/5sbZS7zB8gsA.mp4' },
+            { title: '为什么要开这个课', url: 'https://1500019226.vod2.myqcloud.com/6cae817cvodcq1500019226/eaf67e385001834814689598587/1tF5wVHpVIsA.mp4' },
+            { title: '多维表格和Excel的区别', url: 'https://1500019226.vod2.myqcloud.com/6cae817cvodcq1500019226/9b6ceb635001834814688461245/BI73QprzsqwA.mp4' },
+            { title: '新建第一个多维表格案例（上）', url: 'https://1500019226.vod2.myqcloud.com/6cae817cvodcq1500019226/9b0323855001834814688406581/q4te8rGts3cA.mp4' },
+            { title: '新建第一个多维表格案例(下)', url: 'https://1500019226.vod2.myqcloud.com/6cae817cvodcq1500019226/e362f1e15001834814689212491/Jayceog0C5UA.mp4' },
+            { title: '人事考勤案例', url: 'https://1500019226.vod2.myqcloud.com/6cae817cvodcq1500019226/e354a65f5001834814689209204/YJTYiZ3rqIAA.mp4' },
+            { title: '学生活动记录并分享的案例', url: 'https://1500019226.vod2.myqcloud.com/6cae817cvodcq1500019226/e36260995001834814689211340/MfsRncElSbYA.mp4' },
+            { title: '安排表表格案例', url: 'https://1500019226.vod2.myqcloud.com/6cae817cvodcq1500019226/e59f29855001834814767245357/LMP6BqAVNO0A.mp4' },
+            { title: '迪士尼乐园游玩项目表', url: 'https://1500019226.vod2.myqcloud.com/6cae817cvodcq1500019226/28fccf7e5001834814690834018/AkDjFQEoFf8A.mp4' },
+            { title: '提交图片附件按照索引列命名', url: 'https://1500019226.vod2.myqcloud.com/6cae817cvodcq1500019226/be5ad7a45001834814692647830/wLOQFKaCIokA.mp4' },
+            { title: 'AI写评语案例', url: 'https://1500019226.vod2.myqcloud.com/6cae817cvodcq1500019226/c29114865001834814770729096/8WCb9uZfkkAA.mp4' },
+            { title: '课程总结+作业布置', url: 'https://1500019226.vod2.myqcloud.com/6cae817cvodcq1500019226/6f4fdc1f5001834814691580074/l7BQ3mSyhJsA.mp4' }
+        ];
+
+        /**
+         * DOM 元素引用
+         */
+        const pwdOverlay = document.getElementById('pwdOverlay');
+        const pwdInput = document.getElementById('pwdInput');
+        const pwdSubmit = document.getElementById('pwdSubmit');
+        const pwdError = document.getElementById('pwdError');
+        const mainContent = document.getElementById('mainContent');
+        const courseCard = document.getElementById('courseCard');
+        const episodeWrapper = document.getElementById('episodeWrapper');
+        const episodeList = document.getElementById('episodeList');
+        const playerView = document.getElementById('playerView');
+        const backBtn = document.getElementById('backBtn');
+        const currentVideoTitle = document.getElementById('currentVideoTitle');
+        const videoPlayer = document.getElementById('videoPlayer');
+
+        /**
+         * 密码验证功能
+         * 密码：QQ563493292
+         */
+        const correctPwd = 'QQ563493292';
+
+        /**
+         * 检查密码是否正确
+         */
+        function checkPassword() {
+            const val = pwdInput.value;
+            if (val === correctPwd) {
+                pwdOverlay.style.display = 'none';
+                mainContent.style.display = 'block';
+                try { sessionStorage.setItem('_pwd_ok', '1'); } catch(e) {}
+            } else {
+                pwdError.textContent = '密码错误，请重试';
+                pwdInput.value = '';
+                pwdInput.focus();
+                setTimeout(function() { pwdError.textContent = ''; }, 2000);
+            }
+        }
+
+        pwdSubmit.addEventListener('click', checkPassword);
+        pwdInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') checkPassword();
+        });
+
+        try {
+            if (sessionStorage.getItem('_pwd_ok') === '1') {
+                pwdOverlay.style.display = 'none';
+                mainContent.style.display = 'block';
+            } else {
+                setTimeout(function() { pwdInput.focus(); }, 100);
+            }
+        } catch(e) {
+            setTimeout(function() { pwdInput.focus(); }, 100);
+        }
+
+        /**
+         * 点击第一次课卡片展开/收起集数下拉菜单
+         * 通过切换 expanded 类实现箭头旋转动画
+         */
+        courseCard.addEventListener('click', function() {
+            const isExpanded = courseCard.classList.toggle('expanded');
+            episodeWrapper.style.display = isExpanded ? 'block' : 'none';
+        });
+
+        /**
+         * 渲染集数卡片列表
+         * 将课程数据生成为可点击的集数条目
+         */
+        function renderEpisodes() {
+            const items = course1Episodes.map(function(ep, i) {
+                return '<div class="episode-item" data-index="' + i + '">' +
+                    '<div class="episode-num">' + (i + 1) + '</div>' +
+                    '<div class="episode-title">' + ep.title + '</div>' +
+                    '<div class="episode-play-icon">▶</div>' +
+                '</div>';
+            }).join('');
+            episodeList.innerHTML = items;
+
+            /**
+             * 使用事件委托监听集数条目点击
+             * 点击后直接播放对应视频
+             */
+            episodeList.addEventListener('click', function(e) {
+                var item = e.target.closest('.episode-item');
+                if (!item) return;
+                var index = parseInt(item.getAttribute('data-index'), 10);
+                playEpisode(index);
+            });
+        }
+
+        /**
+         * 播放指定索引的集数
+         * @param {number} index - 集数索引
+         */
+        function playEpisode(index) {
+            var ep = course1Episodes[index];
+            var title = '第' + (index + 1) + '集 - ' + ep.title;
+            currentVideoTitle.textContent = title;
+            videoPlayer.src = ep.url;
+            playerView.classList.add('active');
+            videoPlayer.load();
+            videoPlayer.play().catch(function() {});
+        }
+
+        /**
+         * 返回课程列表
+         * 暂停视频并清空源，避免后台继续加载
+         */
+        backBtn.addEventListener('click', function() {
+            videoPlayer.pause();
+            videoPlayer.src = '';
+            playerView.classList.remove('active');
+        });
+
+        /**
+         * ========== 视频下载防护 ==========
+         */
+
+        /**
+         * 禁用视频右键菜单（多种方式）
+         */
+        videoPlayer.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            return false;
+        });
+
+        videoPlayer.addEventListener('mousedown', function(e) {
+            if (e.button === 2) {
+                e.preventDefault();
+                e.stopPropagation();
+                return false;
+            }
+        });
+
+        /**
+         * 禁用视频元素的下载快捷键
+         * @param {KeyboardEvent} e - 键盘事件对象
+         */
+        videoPlayer.addEventListener('keydown', function(e) {
+            // F12、S（保存）、P（打印）、U（查看源码）
+            if (e.key === 'F12' || e.key === 's' || e.key === 'S' ||
+                e.key === 'p' || e.key === 'P' || e.key === 'u' || e.key === 'U') {
+                if (e.ctrlKey || e.metaKey) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    return false;
+                }
+            }
+        });
+
+        /**
+         * 阻止视频元素的拖拽（防止直接拖到新窗口下载）
+         */
+        videoPlayer.addEventListener('dragstart', function(e) {
+            e.preventDefault();
+            return false;
+        });
+
+        /**
+         * 监听 video 错误事件，防止视频 URL 暴露
+         */
+        videoPlayer.addEventListener('error', function() {
+            // 视频加载失败时不暴露任何信息
+        });
+
+        /**
+         * 在播放时动态移除 video 的 download 属性
+         */
+        videoPlayer.addEventListener('play', function() {
+            // 确保 video 元素没有 download 属性
+            if (videoPlayer.hasAttribute('download')) {
+                videoPlayer.removeAttribute('download');
+            }
+        });
+
+        /**
+         * 主动清理 IDM（Internet Download Manager）等扩展注入的下载元素
+         * 扫描所有 body 直接子元素及 iframe 包裹层外的可疑浮层
+         */
+        function cleanInjectedDownloadElements() {
+            /**
+             * 匹配 IDM 及常见视频下载扩展注入元素的属性选择器
+             * - 包含 IDM/idm 字样的 class 或 id
+             * - 包含 download/video-download 字样的 class 或 id
+             * - 带有下载相关 data-action 的元素
+             */
+            var selectors = [
+                /* IDM */
+                '[class*="IDM"]', '[class*="idm"]', '[id*="IDM"]', '[id*="idm"]',
+                '[class*="IDMDownload"]', '[id*="IDMDownload"]',
+                '[class*="IDMVideoDownload"]', '[id*="IDMVideoDownload"]',
+                '[class*="IDMDownLink"]', '[id*="IDMDownLink"]',
+                '[class*="IDMDialog"]', '[id*="IDMDialog"]',
+                '[class*="idm_download"]', '[id*="idm_download"]',
+                '[class*="idm-button"]', '[id*="idm-button"]',
+                /* Video DownloadHelper */
+                '[class*="vdh"]', '[class*="VDH"]', '[id*="vdh"]', '[id*="VDH"]',
+                '[class*="video-downloadhelper"]', '[id*="video-downloadhelper"]',
+                '[class*="downloadhelper"]', '[id*="downloadhelper"]',
+                /* Flash Video Downloader */
+                '[class*="flash-video"]', '[id*="flash-video"]',
+                '[class*="fvdownloader"]', '[id*="fvdownloader"]',
+                '[class*="flashdownloader"]', '[id*="flashdownloader"]',
+                /* EagleGet */
+                '[class*="eagleget"]', '[class*="EagleGet"]', '[id*="eagleget"]', '[id*="EagleGet"]',
+                '[class*="eg-download"]', '[id*="eg-download"]',
+                /* Free Download Manager (FDM) */
+                '[class*="fdm-"]', '[class*="FDM"]', '[id*="fdm-"]', '[id*="FDM"]',
+                '[class*="free-download-manager"]', '[id*="free-download-manager"]',
+                /* XDM (Xtreme Download Manager) */
+                '[class*="xdm-"]', '[class*="XDM"]', '[id*="xdm-"]', '[id*="XDM"]',
+                '[class*="xtreme-download"]', '[id*="xtreme-download"]',
+                /* Neat Download Manager (NDM) */
+                '[class*="ndm-"]', '[class*="NDM"]', '[id*="ndm-"]', '[id*="NDM"]',
+                '[class*="neat-download"]', '[id*="neat-download"]',
+                /* Ant Video Downloader */
+                '[class*="antvideo"]', '[class*="AntVideo"]', '[id*="antvideo"]', '[id*="AntVideo"]',
+                '[class*="ant-downloader"]', '[id*="ant-downloader"]',
+                /* Video Downloader professional */
+                '[class*="video-downloader-pro"]', '[id*="video-downloader-pro"]',
+                '[class*="vdownloader"]', '[id*="vdownloader"]',
+                /* 迅雷 (Thunder / Xunlei) */
+                '[class*="thunder"]', '[class*="Thunder"]', '[id*="thunder"]', '[id*="Thunder"]',
+                '[class*="xunlei"]', '[class*="Xunlei"]', '[id*="xunlei"]', '[id*="Xunlei"]',
+                '[class*="xl_download"]', '[id*="xl_download"]',
+                '[class*="XLDown"]', '[id*="XLDown"]',
+                /* 115 下载 */
+                '[class*="115-download"]', '[id*="115-download"]',
+                '[class*="115downloader"]', '[id*="115downloader"]',
+                /* QQ 浏览器下载 */
+                '[class*="qq-download"]', '[id*="qq-download"]',
+                '[class*="qqbrowser-download"]', '[id*="qqbrowser-download"]',
+                /* UC 浏览器下载 */
+                '[class*="uc-download"]', '[id*="uc-download"]',
+                '[class*="ucdownloader"]', '[id*="ucdownloader"]',
+                /* 搜狗下载 */
+                '[class*="sogou-download"]', '[id*="sogou-download"]',
+                /* 通用下载浮层 */
+                '[class*="download-video"]', '[id*="download-video"]',
+                '[class*="video-download"]', '[id*="video-download"]',
+                '[class*="videoDownloader"]', '[id*="videoDownloader"]',
+                '[class*="download-button-floating"]', '[id*="download-button-floating"]',
+                '[class*="floating-download"]', '[id*="floating-download"]',
+                '[class*="video-save"]', '[id*="video-save"]',
+                '[class*="save-video"]', '[id*="save-video"]',
+                '[data-action="download"]',
+                '[class*="download"][class*="button"]',
+                '[id*="download"][id*="button"]'
+            ];
+
+            for (var i = 0; i < selectors.length; i++) {
+                var nodes = document.querySelectorAll(selectors[i]);
+                nodes.forEach(function(node) {
+                    // 跳过页面自身的水印和播放器元素
+                    if (node === document.querySelector('.watermark')) return;
+                    if (node.id === 'pwdOverlay' || node.id === 'playerView') return;
+                    try {
+                        node.style.display = 'none';
+                        node.style.visibility = 'hidden';
+                        node.style.opacity = '0';
+                        node.style.width = '0';
+                        node.style.height = '0';
+                        node.style.pointerEvents = 'none';
+                        if (node.parentNode) {
+                            node.parentNode.removeChild(node);
+                        }
+                    } catch(e) {}
+                });
+            }
+
+            /**
+             * 扫描 body 下所有 fixed 定位的 div 元素
+             * 排除页面自身必要元素后，移除可疑的悬浮下载浮层
+             */
+            var fixedDivs = document.querySelectorAll('body > div, body > div > div');
+            fixedDivs.forEach(function(div) {
+                // 排除页面自身关键元素
+                if (div.id === 'pwdOverlay' || div.id === 'mainContent' ||
+                    div.id === 'playerView' || div.id === 'loader') return;
+                if (div.classList.contains('watermark') ||
+                    div.classList.contains('player-view') ||
+                    div.classList.contains('container')) return;
+
+                var style = window.getComputedStyle(div);
+                var pos = style.position;
+                var zIndex = parseInt(style.zIndex, 10);
+
+                // 检测 fixed 定位且高 z-index 的可疑浮层
+                if (pos === 'fixed' && zIndex > 100) {
+                    // 检查元素内部文本是否包含下载相关字样
+                    var text = (div.textContent || '').toLowerCase();
+                    var hasDownloadText = text.indexOf('下载') !== -1 ||
+                                         text.indexOf('download') !== -1 ||
+                                         text.indexOf('idm') !== -1 ||
+                                         text.indexOf('thunder') !== -1 ||
+                                         text.indexOf('迅雷') !== -1 ||
+                                         text.indexOf('xunlei') !== -1 ||
+                                         text.indexOf('eagleget') !== -1 ||
+                                         text.indexOf('fdm') !== -1 ||
+                                         text.indexOf('save video') !== -1 ||
+                                         text.indexOf('保存视频') !== -1 ||
+                                         text.indexOf('downloadhelper') !== -1 ||
+                                         text.indexOf('video downloader') !== -1;
+                    if (hasDownloadText) {
+                        try {
+                            div.style.display = 'none';
+                            if (div.parentNode) {
+                                div.parentNode.removeChild(div);
+                            }
+                        } catch(e) {}
+                    }
+                }
+            });
+        }
+
+        /**
+         * 监听 DOM 变化，主动清理 IDM 等扩展注入的下载按钮
+         * 使用防抖避免频繁触发影响性能
+         */
+        var cleanTimer = null;
+        var observer = new MutationObserver(function() {
+            if (cleanTimer) clearTimeout(cleanTimer);
+            cleanTimer = setTimeout(cleanInjectedDownloadElements, 50);
+        });
+        observer.observe(document.documentElement, {
+            childList: true,
+            subtree: true,
+            attributes: true,
+            attributeFilter: ['class', 'id', 'style']
+        });
+
+        /**
+         * 定时主动清理（兜底机制）
+         * 即使 MutationObserver 漏掉某些情况，定时器也能清理
+         */
+        setInterval(cleanInjectedDownloadElements, 1000);
+
+        /**
+         * 页面加载完成后立即清理一次
+         */
+        window.addEventListener('load', cleanInjectedDownloadElements);
+        document.addEventListener('DOMContentLoaded', cleanInjectedDownloadElements);
+
+        /**
+         * ==================== 安全防护 ====================
+         */
+
+        /**
+         * 禁用右键菜单
+         * @param {Event} e - 鼠标事件对象
+         */
+        document.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+            return false;
+        });
+
+        /**
+         * 阻止开发者工具相关快捷键
+         * 包含 F12、保存、打印、查看源码、各种开发者工具打开方式
+         * @param {KeyboardEvent} e - 键盘事件对象
+         */
+        document.addEventListener('keydown', function(e) {
+            // F12 开发者工具
+            if (e.key === 'F12' || e.keyCode === 123) {
+                e.preventDefault();
+                e.stopPropagation();
+                return false;
+            }
+
+            // 组合键判定
+            var keyCombo = '';
+            if (e.ctrlKey || e.metaKey) {
+                keyCombo += e.metaKey ? 'Meta+' : 'Ctrl+';
+            }
+            if (e.shiftKey) {
+                keyCombo += 'Shift+';
+            }
+            keyCombo += e.key;
+
+            var blocked = [
+                'Ctrl+S',        // 保存
+                'Ctrl+P',        // 打印
+                'Ctrl+U',        // 查看源代码
+                'Ctrl+Shift+I',  // 开发者工具
+                'Ctrl+Shift+J',  // 控制台
+                'Ctrl+Shift+C',  // 检查元素
+                'Ctrl+N',        // 新窗口
+                'Ctrl+T',        // 新标签页
+                'Ctrl+W',        // 关闭标签页
+                'Meta+S',
+                'Meta+P',
+                'Meta+U',
+                'Meta+Shift+I',
+                'Meta+Shift+J',
+                'Meta+Shift+C',
+                'Meta+N',
+                'Meta+T'
+            ];
+
+            if (blocked.indexOf(keyCombo) !== -1) {
+                e.preventDefault();
+                e.stopPropagation();
+                return false;
+            }
+        });
+
+        /**
+         * 禁止拖拽和文本选择
+         * @param {Event} e - 事件对象
+         */
+        document.addEventListener('dragstart', function(e) {
+            e.preventDefault();
+            return false;
+        });
+
+        document.addEventListener('selectstart', function(e) {
+            e.preventDefault();
+            return false;
+        });
+
+        /**
+         * 严禁新窗口打开 - 拦截所有 target=_blank 和外部链接
+         * 阻止带 target 属性的链接默认行为
+         * @param {Event} e - 点击事件对象
+         */
+        document.addEventListener('click', function(e) {
+            var target = e.target;
+            // 向上查找最近的 a 标签
+            while (target && target.tagName !== 'A') {
+                target = target.parentNode;
+                if (!target || target === document) return;
+            }
+            if (target && target.tagName === 'A') {
+                // 阻止所有链接的默认打开行为
+                e.preventDefault();
+                e.stopPropagation();
+                return false;
+            }
+        }, true);
+
+        /**
+         * 重写 window.open 方法，彻底禁止新窗口打开
+         * @returns {null} 始终返回 null
+         */
+        window.open = function() {
+            return null;
+        };
+
+        /**
+         * 拦截表单提交可能导致的新窗口打开
+         */
+        document.addEventListener('submit', function(e) {
+            e.preventDefault();
+            return false;
+        }, true);
+
+        /**
+         * 视频播放器右键菜单禁用
+         */
+        videoPlayer.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+            return false;
+        });
+
+        /**
+         * 开发者工具检测
+         * 通过窗口尺寸差值判断开发者工具是否打开
+         * 打开时清空页面内容，防止调试
+         */
+        (function() {
+            var threshold = 160;
+            var devtoolsOpen = false;
+
+            setInterval(function() {
+                var widthDiff = window.outerWidth - window.innerWidth > threshold;
+                var heightDiff = window.outerHeight - window.innerHeight > threshold;
+
+                if (widthDiff || heightDiff) {
+                    if (!devtoolsOpen) {
+                        devtoolsOpen = true;
+                        // 开发者工具打开时跳转到警告页
+                        document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;color:#fff;font-size:20px;background:#000;text-align:center;padding:20px;">请关闭开发者工具后刷新页面</div>';
+                    }
+                } else {
+                    devtoolsOpen = false;
+                }
+            }, 500);
+        })();
+
+        /**
+         * 页面加载完成后渲染集数列表
+         */
+        renderEpisodes();
+    </script>
+</body>
+</html>
